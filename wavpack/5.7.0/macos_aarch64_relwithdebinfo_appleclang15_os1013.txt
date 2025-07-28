@@ -1,0 +1,14 @@
+[settings]
+arch=armv8
+build_type=RelWithDebInfo
+compiler=apple-clang
+compiler.cppstd=17
+compiler.libcxx=libc++
+compiler.version=15
+os=Macos
+os.version=10.13
+[options]
+enable_dsd=True
+fPIC=True
+legacy_format=False
+shared=True
