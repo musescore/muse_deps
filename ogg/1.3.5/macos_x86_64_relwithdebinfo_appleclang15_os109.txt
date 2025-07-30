@@ -1,0 +1,9 @@
+[settings]
+arch=x86_64
+build_type=RelWithDebInfo
+compiler=apple-clang
+compiler.version=15
+os=Macos
+os.version=10.9
+[options]
+shared=True
