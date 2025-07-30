@@ -1,0 +1,14 @@
+[settings]
+arch=x86_64
+build_type=Debug
+compiler=msvc
+compiler.runtime=dynamic
+compiler.runtime_type=Debug
+compiler.version=194
+os=Windows
+[options]
+avx=False
+fixed_point=False
+shared=True
+sse4_1=False
+stack_protector=True
