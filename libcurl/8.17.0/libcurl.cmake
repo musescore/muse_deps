@@ -21,6 +21,7 @@ function(libcurl_Populate remote_url local_path os arch build_type)
             ${local_path}/lib/libcurl.so
         )
         set(libcurl_INSTALL_LIBRARIES ${libcurl_LIBRARIES})
+        set(openssl_libraries OpenSSL::SSL OpenSSL::Crypto)
 
     elseif(os STREQUAL "macos")
 
@@ -48,6 +49,7 @@ function(libcurl_Populate remote_url local_path os arch build_type)
             ${local_path}/lib/libcurl.dylib
         )
         set(libcurl_INSTALL_LIBRARIES ${libcurl_LIBRARIES})
+        set(openssl_libraries OpenSSL::SSL OpenSSL::Crypto)
 
     elseif(os STREQUAL "windows")
 
@@ -66,7 +68,8 @@ function(libcurl_Populate remote_url local_path os arch build_type)
         endif()
 
         set(libcurl_INCLUDE_DIRS ${local_path}/include)
-        set(libcurl_LIBRARIES ${local_path}/lib/libcurl_impl.lib)
+        set(libcurl_LIBRARIES ${local_path}/lib/libcurl_imp.lib)
+        set(libcurl_INSTALL_LIBRARIES ${local_path}/bin/libcurl.dll)
 
     else()
         message(FATAL_ERROR "[libcurl] Not supported os: ${os}")
@@ -76,11 +79,11 @@ function(libcurl_Populate remote_url local_path os arch build_type)
        add_library(CURL::libcurl INTERFACE IMPORTED GLOBAL)
 
        target_include_directories(CURL::libcurl INTERFACE ${libcurl_INCLUDE_DIRS} )
-       target_link_libraries(CURL::libcurl INTERFACE ${libcurl_LIBRARIES} )
+       target_link_libraries(CURL::libcurl INTERFACE ${libcurl_LIBRARIES} ${openssl_libraries} )
     endif()
 
     set_property(GLOBAL PROPERTY libcurl_INCLUDE_DIRS ${libcurl_INCLUDE_DIRS})
     set_property(GLOBAL PROPERTY libcurl_LIBRARIES ${libcurl_LIBRARIES})
-    set_property(GLOBAL PROPERTY libcurl_INSTALL_LIBRARIES ${libcurl_INSTALL_LIBRARIES})
+    set_property(GLOBAL PROPERTY libcurl_INSTALL_LIBRARIES ${libcurl_INSTALL_LIBRARIES} ${openssl_INSTALL_LIBRARIES})
 
 endfunction()
