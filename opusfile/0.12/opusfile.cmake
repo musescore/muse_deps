@@ -79,6 +79,7 @@ function(opusfile_Populate remote_url local_path os arch build_type)
 
     set_property(GLOBAL PROPERTY opusfile_INCLUDE_DIRS ${opusfile_INCLUDE_DIRS})
     set_property(GLOBAL PROPERTY opusfile_LIBRARIES ${opusfile_LIBRARIES})
-    set_property(GLOBAL PROPERTY opusfile_INSTALL_LIBRARIES ${opusfile_INSTALL_LIBRARIES})
+    # opusfile is static library, so we don't need to export it for install
+    set_property(GLOBAL PROPERTY opusfile_INSTALL_LIBRARIES "")
 
 endfunction()
