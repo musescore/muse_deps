@@ -1,0 +1,4 @@
+[submodule "kddockwidgets/2.4/kddockwidgets"]
+	path = kddockwidgets/2.4/kddockwidgets
+	url = https://github.com/musescore/KDDockWidgets
+	branch = 2.4
