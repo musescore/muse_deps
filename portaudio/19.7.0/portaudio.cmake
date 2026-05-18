@@ -3,7 +3,7 @@ function(portaudio_Populate remote_url local_path os arch build_type)
 
     if (os STREQUAL "linux")
 
-        set(compiler "gcc12")
+        set(compiler "gcc10")
 
         # At the moment only relwithdebinfo
         # I don't think we need debug builds
@@ -46,8 +46,11 @@ function(portaudio_Populate remote_url local_path os arch build_type)
 
     elseif(os STREQUAL "windows")
 
-        set(compiler "msvc194")
-        set(build_type "relwithdebinfo")
+        set(compiler "msvc192")
+
+        if (build_type STREQUAL "release")
+            set(build_type "relwithdebinfo")
+        endif()
 
         set(name "windows_${arch}_${build_type}_${compiler}")
 

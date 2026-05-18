@@ -2,7 +2,7 @@
 arch=x86_64
 build_type=RelWithDebInfo
 compiler=gcc
-compiler.version=12
+compiler.version=10
 os=Linux
 [options]
 fPIC=True
