@@ -1,0 +1,106 @@
+name: Build prebuilt deps
+
+on:
+  workflow_dispatch:
+
+
+# Self-reference for prebuilt archive URLs
+# On the first build a fork will publish to its own releases, and the lock will pin that URL.
+# Until then it will be able to fetch from the main repo releases
+env:
+  EXTDEPS_PREBUILT_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos,   arch: universal, runner: macos-26 }
+          - { os: macos,   arch: aarch64,   runner: macos-26 }
+          - { os: macos,   arch: x86_64,    runner: macos-26 }
+          - { os: windows, arch: x86_64,    runner: windows-2022 }
+          - { os: windows, arch: aarch64,   runner: windows-11-arm }
+          - { os: linux,   arch: x86_64,    runner: ubuntu-22.04 }
+          - { os: linux,   arch: aarch64,   runner: ubuntu-22.04-arm }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: matrix.os == 'windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch == 'aarch64' && 'arm64' || 'amd64' }}
+      - if: matrix.os == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build p7zip-full libasound2-dev libssl-dev
+      - if: matrix.os == 'macos'
+        run: brew install ninja sevenzip
+      - if: matrix.os == 'windows'
+        run: choco install ninja 7zip -y
+      - name: Build platform deps
+        shell: bash
+        run: cmake -DOS=${{ matrix.os }} -DARCH=${{ matrix.arch }} -P buildtools/build_platform.cmake
+      - uses: actions/upload-artifact@v4
+        with:
+          name: out-${{ matrix.os }}-${{ matrix.arch }}
+          path: .build/platform/out/
+          if-no-files-found: error
+
+  collect:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: out-*
+          merge-multiple: true
+          path: out
+      # Every run publishes into its new date-tagged release
+      - name: Publish release and update lock
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag="deps-$(date -u +%Y%m%d-%H%M%S)"
+          cmake -P buildtools/mirror_sources.cmake
+          : > prebuilt.lock.tmp
+
+          # trim crlf from windows runner
+          for frag in out/prebuilt-*.lock; do
+            tr -d '\r' < "$frag" | while read -r name ver los larch file sha rest; do
+              echo "$name $ver $los $larch $file $sha $tag" >> prebuilt.lock.tmp
+            done
+          done
+
+          sort -o prebuilt.lock prebuilt.lock.tmp && rm prebuilt.lock.tmp
+          {
+            echo "Dependencies at muse_deps \`$(git rev-parse --short HEAD)\`."
+            echo
+            echo "| dependency | version | type |"
+            echo "|---|---|---|"
+            for m in */*.cmake; do
+              d=$(dirname "$m"); n=$(basename "$m" .cmake)
+              [ "$d" = "$n" ] || continue
+              ver=$(sed -n 's/^set(DEP_VERSION \(.*\))$/\1/p' "$m" | head -1)
+              kind=$(sed -n 's/^set(DEP_KIND \(.*\))$/\1/p' "$m" | head -1)
+              if [ -z "$kind" ]; then
+                if [ -d "$d/$ver/recipe" ]; then kind=prebuilt; else kind=system; fi
+              fi
+              echo "| $n | ${ver:--} | $kind |"
+            done | sort
+          } > notes.md
+          gh release create "$tag" --title "$tag" --notes-file notes.md
+          gh release upload "$tag" out/*.7z .build/mirror/*
+
+          # Record this repo's release-download root
+          echo "$EXTDEPS_PREBUILT_URL" > prebuilt_url.txt
+
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add prebuilt.lock prebuilt_url.txt
+          git diff --cached --quiet || git commit -m "prebuilt.lock: $tag"
+          git push
