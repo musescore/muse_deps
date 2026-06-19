@@ -1,0 +1,14 @@
+name: Validate recipes
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # cmake is preinstalled on the runner; this builds nothing and takes seconds.
+      - name: Validate recipes
+        run: cmake -P buildtools/validate.cmake
