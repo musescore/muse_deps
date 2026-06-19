@@ -228,7 +228,7 @@ function(build_dep)
         set(BD_CONFIG "RelWithDebInfo")
     endif()
 
-    # Clear existing DEP_* variiables so recipes do not leak into each other
+    # Clear existing DEP_* variables so recipes do not leak into each other
     get_cmake_property(_allvars VARIABLES)
     foreach(_v ${_allvars})
         if(_v MATCHES "^DEP_")

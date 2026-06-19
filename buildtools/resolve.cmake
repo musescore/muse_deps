@@ -195,17 +195,13 @@ function(_extdeps_resolve_system name)
 endfunction()
 
 # Build from source
-function(_extdeps_build name version local_path os arch)
-    set(_config "RelWithDebInfo")
-    if(ARGC GREATER 5)
-        set(_config "${ARGV5}")
-    endif()
+function(_extdeps_build name local_path os arch config)
     set(_dep_prefixes "")
     foreach(_dep_name ${DEP_DEPENDS})
         list(APPEND _dep_prefixes "${local_path}/../${_dep_name}")
     endforeach()
     build_dep(NAME ${name} RECIPE_DIR "${_EXTDEPS_ROOT}/recipes/${name}"
-              OS ${os} ARCH ${arch} CONFIG "${_config}"
+              OS ${os} ARCH ${arch} CONFIG "${config}"
               WORK "${local_path}/work" INSTALL_DIR "${local_path}"
               DEPENDS_PREFIXES "${_dep_prefixes}")
 endfunction()
@@ -321,7 +317,7 @@ macro(_extdeps_patch_entry entry sole out_dir out_rel)
 endmacro()
 
 # Fetch and populate source deps
-function(_extdeps_populate_source name local_path version)
+function(_extdeps_populate_source name local_path)
 
     foreach(_source ${DEP_SOURCES})
         # each entry is "<subdir>|<kind>|<location>|<pin>"
@@ -512,7 +508,7 @@ function(extdeps_resolve name version mode local_path os arch config)
                 _extdeps_fetch_prebuilt("${name}" "${local_path}" "${os}" "${arch}" "${version}" _ok)
             endif()
             if(NOT _ok)
-                _extdeps_build("${name}" "${version}" "${local_path}" "${os}" "${arch}" "${config}")
+                _extdeps_build("${name}" "${local_path}" "${os}" "${arch}" "${config}")
             endif()
             _extdeps_resolve_installed("${name}" "${local_path}" "${os}" "${config}")
         endif()
@@ -520,7 +516,7 @@ function(extdeps_resolve name version mode local_path os arch config)
     elseif(DEP_KIND STREQUAL "source")
         # SYSTEM mode doesn't have any sources
         if(NOT mode STREQUAL "system")
-            _extdeps_populate_source("${name}" "${local_path}" "${version}")
+            _extdeps_populate_source("${name}" "${local_path}")
         endif()
 
     elseif(DEP_KIND STREQUAL "tool")
@@ -536,12 +532,12 @@ function(extdeps_resolve name version mode local_path os arch config)
             set_property(GLOBAL PROPERTY ${name}_BIN_DIR "${local_path}/bin")
         else()
             if(mode STREQUAL "rebuild")
-                _extdeps_build("${name}" "${version}" "${local_path}" "${os}" "${arch}" "RelWithDebInfo")
+                _extdeps_build("${name}" "${local_path}" "${os}" "${arch}" "RelWithDebInfo")
             else()
                 _extdeps_fetch_prebuilt("${name}" "${local_path}" "${os}" "${arch}" "${version}" _ok)
                 if(NOT _ok)
                     message(WARNING "[${name}] no usable prebuilt for ${os}/${arch}, building from source")
-                    _extdeps_build("${name}" "${version}" "${local_path}" "${os}" "${arch}" "RelWithDebInfo")
+                    _extdeps_build("${name}" "${local_path}" "${os}" "${arch}" "RelWithDebInfo")
                 endif()
             endif()
             set_property(GLOBAL PROPERTY ${name}_BIN_DIR "${local_path}/bin")
