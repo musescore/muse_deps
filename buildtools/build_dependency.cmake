@@ -206,13 +206,12 @@ endfunction()
 function(_bd_recipe_sig recipe_dir os arch out)
     set(_BD_ENGINE_REV 3)
     set(_sig "${_BD_ENGINE_REV}|${os}|${arch}")
-    get_filename_component(_dep_name "${recipe_dir}" NAME)
     file(GLOB_RECURSE _files "${recipe_dir}/*")
     list(SORT _files)
     foreach(_file ${_files})
-        # The dep metadata (<name>.cmake) describes how the dep is consumed, not how
-        # it is built, so it is excluded from the build signature.
-        if(_file STREQUAL "${recipe_dir}/${_dep_name}.cmake")
+        # meta.cmake describes how the dep is consumed, not how it is built,
+        # so it is excluded from the build signature.
+        if(_file STREQUAL "${recipe_dir}/meta.cmake")
             continue()
         endif()
         file(SHA256 "${_file}" _hash)

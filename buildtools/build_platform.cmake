@@ -58,8 +58,8 @@ foreach(_spec ${_specs})
 
     # Read the recipe
     unset(DEP_KIND)
-    if(EXISTS "${_name_dir}/${_name}.cmake")
-        include("${_name_dir}/${_name}.cmake")
+    if(EXISTS "${_name_dir}/meta.cmake")
+        include("${_name_dir}/meta.cmake")
     endif()
 
     # Skip source deps, they are not built

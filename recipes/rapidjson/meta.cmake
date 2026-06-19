@@ -1,5 +1,3 @@
-# Upstream last release: 1.1.0, 2016, using master's sha
-
 set(DEP_KIND source)
 
 function(rapidjson_add_to_build)

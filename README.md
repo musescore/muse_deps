@@ -13,7 +13,7 @@ buildtools/
 prebuilt.lock                immutable prebuilt archive index
 recipes/
   <name>/
-    <name>.cmake             dep metadata: targets, libs, kind, hooks
+    meta.cmake               dep metadata: targets, libs, kind, hooks
     spec.cmake               version, source pins, build args, deps, patches, licenses
     build.cmake              optional custom build script
     patch/*.patch            optional patches
@@ -72,7 +72,7 @@ also be an environment variable; per-dep overrides are CMake variables.
 One metadata file per dependency:
 
 ```cmake
-# recipes/ogg/ogg.cmake
+# recipes/ogg/meta.cmake
 set(DEP_TARGET Ogg::ogg)
 set(DEP_LIBS ogg)
 set(DEP_SYSTEM_HEADER ogg/ogg.h)
@@ -182,7 +182,7 @@ binary; `SYSTEM` still searches `PATH`.
 
 ## Adding A Dependency
 
-1. Create `recipes/<name>/<name>.cmake` with target/library metadata, or set
+1. Create `recipes/<name>/meta.cmake` with target/library metadata, or set
    `DEP_KIND source`/`tool`.
 2. Create `recipes/<name>/spec.cmake`, setting `DEP_VERSION` and pinning every
    source with SHA-256.

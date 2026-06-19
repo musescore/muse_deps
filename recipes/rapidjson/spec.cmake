@@ -1,3 +1,4 @@
+# Upstream last release: 1.1.0, 2016, using master's sha
 set(DEP_VERSION 24b5e7a)
 
 set(DEP_SOURCES

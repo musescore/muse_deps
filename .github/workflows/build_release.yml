@@ -84,7 +84,7 @@ jobs:
             echo "|---|---|---|"
             for d in recipes/*/; do
               n=$(basename "$d")
-              spec="${d}spec.cmake"; meta="${d}${n}.cmake"
+              spec="${d}spec.cmake"; meta="${d}meta.cmake"
               ver=""
               [ -f "$spec" ] && ver=$(sed -n 's/^set(DEP_VERSION \(.*\))$/\1/p' "$spec" | head -1)
               kind=$(sed -n 's/^set(DEP_KIND \(.*\))$/\1/p' "$meta" | head -1)

@@ -1,3 +1,4 @@
+# SVN r331 is the exact revision Audacity last synced to (Jan 2021)
 set(DEP_VERSION r331)
 
 # Sourceforge generates the snapshot on demand and the archive live for 24 hours,

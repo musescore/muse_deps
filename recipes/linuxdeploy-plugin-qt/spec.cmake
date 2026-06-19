@@ -1,3 +1,5 @@
+# Mirror snapshot date. Upstream publishes only moving continuous builds
+# Currently mirroring is manual
 set(DEP_VERSION 2026.06.13)
 
 set(DEP_BINARY_URL_ROOT "https://github.com/musescore/muse_deps/releases/download/mirror-appimage-tools-2026.06.13")

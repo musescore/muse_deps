@@ -83,7 +83,7 @@ function(_extdeps_run name mode)
     set(local_path ${LOCAL_ROOT_PATH}/${name})
 
     # read the dep metadata, then its recipe (the recipe defines DEP_VERSION)
-    include("${EXTDEPS_DIR}/recipes/${name}/${name}.cmake")
+    include("${EXTDEPS_DIR}/recipes/${name}/meta.cmake")
     set(version "")
     if (NOT mode STREQUAL "system")
         include("${EXTDEPS_DIR}/recipes/${name}/spec.cmake")
@@ -224,7 +224,7 @@ function(require_source_dep name)
 
     # only allow system if the dep has a system path
     if (mode STREQUAL "system" AND NOT "${ARGV1}" STREQUAL "SYSTEM")
-        include("${EXTDEPS_DIR}/recipes/${name}/${name}.cmake")
+        include("${EXTDEPS_DIR}/recipes/${name}/meta.cmake")
         if (NOT DEP_SOURCE_SYSTEM)
             set(mode "rebuild")
         endif()
