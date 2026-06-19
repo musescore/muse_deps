@@ -93,11 +93,18 @@ Keys:
 - `DEP_SOURCE_SYSTEM`: source deps only; lets a blanket `=SYSTEM` bind a system
   package.
 
-Define `<name>_resolve_override(mode local_path os arch version)` when the
-generic library layout is not enough (e.g. `wxwidgets`, `openssl`, `libcurl`).
-Define `<name>_post_resolve(...)` for consumer-side integration after
-resolution, usually `add_subdirectory()` or setting variables for existing
-`find_package()` users.
+Optional hooks a `meta.cmake` may define:
+
+- `<name>_resolve_override(mode local_path os arch version [config])`: replaces the
+  generic resolution entirely (e.g. `wxwidgets`, `openssl`, `libcurl`). The 6th
+  `config` argument is passed too (`wxwidgets` uses it; the others ignore it).
+- `<name>_post_resolve(mode local_path os arch version)`: runs after resolution for
+  consumer-side integration, usually `add_subdirectory()` or setting variables for
+  existing `find_package()` users.
+- `<name>_add_to_build()`: called by the **consuming app's** CMake (not the engine) to
+  pull a source dep into its build, e.g. `rapidjson_add_to_build()`. Used by
+  `crashpad_client`, `googletest`, `kddockwidgets`, `loop-tempo-estimator`,
+  `rapidjson`, and `tft`.
 
 ## Recipe Spec
 
