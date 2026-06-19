@@ -67,8 +67,19 @@ function(_bd_mirror repo_root out)
     set(${out} "${_base}/${release_tag}" PARENT_SCOPE)
 endfunction()
 
-# Download from the first working URL
-function(_bd_fetch dest sha256)
+# Split a DEP_SOURCES entry "sub|kind|location|pin" into its four fields.
+macro(_bd_parse_source entry out_sub out_kind out_loc out_pin)
+    string(REPLACE "|" ";" _bd_sf "${entry}")
+    list(GET _bd_sf 0 ${out_sub})
+    list(GET _bd_sf 1 ${out_kind})
+    list(GET _bd_sf 2 ${out_loc})
+    list(GET _bd_sf 3 ${out_pin})
+endmacro()
+
+# Try each URL in turn (retrying, verifying sha256). Sets out_ok TRUE on the first
+# good download. Never fatal, so callers that can fall back (prebuilt -> source) work.
+function(_bd_try_fetch dest sha256 out_ok)
+    set(${out_ok} FALSE PARENT_SCOPE)
     foreach(url ${ARGN})
         foreach(attempt 1 2 3)
             file(DOWNLOAD "${url}" "${dest}" STATUS _status INACTIVITY_TIMEOUT 30)
@@ -76,6 +87,7 @@ function(_bd_fetch dest sha256)
             if(_code EQUAL 0)
                 file(SHA256 "${dest}" _got_sha256)
                 if(_got_sha256 STREQUAL "${sha256}")
+                    set(${out_ok} TRUE PARENT_SCOPE)
                     return()
                 endif()
                 message(WARNING "[fetch] ${url}: sha256 ${_got_sha256} != ${sha256}")
@@ -85,7 +97,14 @@ function(_bd_fetch dest sha256)
             file(REMOVE "${dest}")
         endforeach()
     endforeach()
-    message(FATAL_ERROR "[fetch] all sources failed for ${dest}")
+endfunction()
+
+# Download from the first working URL or fail hard.
+function(_bd_fetch dest sha256)
+    _bd_try_fetch("${dest}" "${sha256}" _ok ${ARGN})
+    if(NOT _ok)
+        message(FATAL_ERROR "[fetch] all sources failed for ${dest}")
+    endif()
 endfunction()
 
 # Run a command with reporting
