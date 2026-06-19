@@ -1,3 +1,0 @@
-set(DEP_SOURCES
-    "utfcpp|tarball|https://github.com/nemtrif/utfcpp/archive/refs/tags/v4.1.1.tar.gz|1ca68016f0abc24172998e39ce0d8f8e2b7a26f7579a0ff85d4e1b9a7aea56f8"
-)

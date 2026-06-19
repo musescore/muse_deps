@@ -82,14 +82,15 @@ endif()
 function(_extdeps_run name mode)
     set(local_path ${LOCAL_ROOT_PATH}/${name})
 
-    # reading the spec
-    include("${EXTDEPS_DIR}/${name}/${name}.cmake")
-    set(version "${DEP_VERSION}")
+    # read the dep metadata, then its recipe (the recipe defines DEP_VERSION)
+    include("${EXTDEPS_DIR}/recipes/${name}/${name}.cmake")
+    set(version "")
     if (NOT mode STREQUAL "system")
+        include("${EXTDEPS_DIR}/recipes/${name}/spec.cmake")
+        set(version "${DEP_VERSION}")
         if ("${version}" STREQUAL "")
-            message(FATAL_ERROR "[deps] '${name}': metadata DEP_VERSION is missing")
+            message(FATAL_ERROR "[deps] '${name}': recipe spec.cmake is missing DEP_VERSION")
         endif()
-        include("${EXTDEPS_DIR}/${name}/${version}/recipe/spec.cmake")
     endif()
 
     # local source type is for local development, built in place
@@ -223,7 +224,7 @@ function(require_source_dep name)
 
     # only allow system if the dep has a system path
     if (mode STREQUAL "system" AND NOT "${ARGV1}" STREQUAL "SYSTEM")
-        include("${EXTDEPS_DIR}/${name}/${name}.cmake")
+        include("${EXTDEPS_DIR}/recipes/${name}/${name}.cmake")
         if (NOT DEP_SOURCE_SYSTEM)
             set(mode "rebuild")
         endif()

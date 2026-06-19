@@ -17,6 +17,10 @@ if(NOT EXTDEPS_PREBUILT_URL)
     set(EXTDEPS_PREBUILT_URL "https://github.com/musescore/muse_deps/releases/download")
 endif()
 
+# Repo root, derived from this file's location (buildtools/..). Stable regardless
+# of recipe nesting depth, so it is used instead of climbing up from a recipe dir.
+get_filename_component(_BD_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}" DIRECTORY)
+
 # Source download cache location. order same as above. (todo: find a better place on Windows)
 function(_bd_resolve_cache out)
     if(DEFINED ENV{EXTDEPS_CACHE})
@@ -200,11 +204,17 @@ endfunction()
 
 # Create a signature of the recipe directory and its contents
 function(_bd_recipe_sig recipe_dir os arch out)
-    set(_BD_ENGINE_REV 2)
+    set(_BD_ENGINE_REV 3)
     set(_sig "${_BD_ENGINE_REV}|${os}|${arch}")
+    get_filename_component(_dep_name "${recipe_dir}" NAME)
     file(GLOB_RECURSE _files "${recipe_dir}/*")
     list(SORT _files)
     foreach(_file ${_files})
+        # The dep metadata (<name>.cmake) describes how the dep is consumed, not how
+        # it is built, so it is excluded from the build signature.
+        if(_file STREQUAL "${recipe_dir}/${_dep_name}.cmake")
+            continue()
+        endif()
         file(SHA256 "${_file}" _hash)
         string(APPEND _sig "|${_hash}")
     endforeach()
@@ -276,9 +286,8 @@ function(build_dep)
     else()
         file(MAKE_DIRECTORY "${_download_dir}")
         message(STATUS "[${BD_NAME}] fetch ${DEP_SOURCE_URL}")
-        get_filename_component(_repo_root "${BD_RECIPE_DIR}/../../.." ABSOLUTE)
-        get_filename_component(_version_dir "${BD_RECIPE_DIR}" DIRECTORY)
-        get_filename_component(_version "${_version_dir}" NAME)
+        set(_repo_root "${_BD_REPO_ROOT}")
+        set(_version "${DEP_VERSION}")
 
         # First try our own presaved mirror,
         # if the depencency is new, then fetch from upstream

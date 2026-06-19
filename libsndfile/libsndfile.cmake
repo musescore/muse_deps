@@ -1,5 +1,0 @@
-set(DEP_VERSION 1.2.2)
-
-set(DEP_TARGET SndFile::sndfile)
-set(DEP_LIBS sndfile)
-set(DEP_SYSTEM_HEADER sndfile.h)

@@ -204,7 +204,7 @@ function(_extdeps_build name version local_path os arch)
     foreach(_dep_name ${DEP_DEPENDS})
         list(APPEND _dep_prefixes "${local_path}/../${_dep_name}")
     endforeach()
-    build_dep(NAME ${name} RECIPE_DIR "${_EXTDEPS_ROOT}/${name}/${version}/recipe"
+    build_dep(NAME ${name} RECIPE_DIR "${_EXTDEPS_ROOT}/recipes/${name}"
               OS ${os} ARCH ${arch} CONFIG "${_config}"
               WORK "${local_path}/work" INSTALL_DIR "${local_path}"
               DEPENDS_PREFIXES "${_dep_prefixes}")
@@ -244,7 +244,7 @@ function(_extdeps_fetch_prebuilt name local_path os arch version out)
     list(GET _lock_fields 6 _release)
 
     # Check the recipe signature
-    _bd_recipe_sig("${_EXTDEPS_ROOT}/${name}/${version}/recipe" "${_lock_os}" "${_lock_arch}" _current_sig)
+    _bd_recipe_sig("${_EXTDEPS_ROOT}/recipes/${name}" "${_lock_os}" "${_lock_arch}" _current_sig)
     string(SUBSTRING "${_current_sig}" 0 12 _current_sig)
     if(NOT _archive_name MATCHES "-${_current_sig}\\.7z$")
         message(STATUS "[${name}] lock entry ${_archive_name} doesn't match the local recipe (${_current_sig}), building from source")
@@ -366,7 +366,7 @@ function(_extdeps_populate_source name local_path version)
     _bd_resolve_cache(_cache)
     set(_download_dir "${_cache}/downloads/${name}")
     file(MAKE_DIRECTORY "${_download_dir}")
-    set(_recipe_dir "${_EXTDEPS_ROOT}/${name}/${version}/recipe")
+    set(_recipe_dir "${_EXTDEPS_ROOT}/recipes/${name}")
 
     # Collect patches for the signature
     set(_pins "${DEP_SOURCES}")

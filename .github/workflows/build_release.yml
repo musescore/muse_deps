@@ -82,13 +82,14 @@ jobs:
             echo
             echo "| dependency | version | type |"
             echo "|---|---|---|"
-            for m in */*.cmake; do
-              d=$(dirname "$m"); n=$(basename "$m" .cmake)
-              [ "$d" = "$n" ] || continue
-              ver=$(sed -n 's/^set(DEP_VERSION \(.*\))$/\1/p' "$m" | head -1)
-              kind=$(sed -n 's/^set(DEP_KIND \(.*\))$/\1/p' "$m" | head -1)
+            for d in recipes/*/; do
+              n=$(basename "$d")
+              spec="${d}spec.cmake"; meta="${d}${n}.cmake"
+              ver=""
+              [ -f "$spec" ] && ver=$(sed -n 's/^set(DEP_VERSION \(.*\))$/\1/p' "$spec" | head -1)
+              kind=$(sed -n 's/^set(DEP_KIND \(.*\))$/\1/p' "$meta" | head -1)
               if [ -z "$kind" ]; then
-                if [ -d "$d/$ver/recipe" ]; then kind=prebuilt; else kind=system; fi
+                if [ -f "$spec" ]; then kind=prebuilt; else kind=system; fi
               fi
               echo "| $n | ${ver:--} | $kind |"
             done | sort

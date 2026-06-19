@@ -11,10 +11,10 @@ buildtools/
   build_platform.cmake       producer: build and package one os/arch set
   mirror_sources.cmake       producer: stage every pinned source archive
 prebuilt.lock                immutable prebuilt archive index
-<name>/
-  <name>.cmake               dep metadata: version, targets, libs, kind, hooks
-  <version>/recipe/
-    spec.cmake               source pins, build args, deps, patches, licenses
+recipes/
+  <name>/
+    <name>.cmake             dep metadata: targets, libs, kind, hooks
+    spec.cmake               version, source pins, build args, deps, patches, licenses
     build.cmake              optional custom build script
     patch/*.patch            optional patches
 ```
@@ -32,7 +32,7 @@ require_source_dep(lv2sdk)
 ```
 
 The manifest names deps and the preferred mode. Each version
-lives in `<name>/<name>.cmake` as `DEP_VERSION`. The app pins the whole set by
+lives in `recipes/<name>/spec.cmake` as `DEP_VERSION`. The app pins the whole set by
 pinning this submodule's commit. You can't mix and match different versions.
 
 Order matters: a dep must appear after everything it links (e.g. `opusfile`
@@ -72,8 +72,7 @@ also be an environment variable; per-dep overrides are CMake variables.
 One metadata file per dependency:
 
 ```cmake
-# ogg/ogg.cmake
-set(DEP_VERSION 1.3.5)
+# recipes/ogg/ogg.cmake
 set(DEP_TARGET Ogg::ogg)
 set(DEP_LIBS ogg)
 set(DEP_SYSTEM_HEADER ogg/ogg.h)
@@ -81,7 +80,6 @@ set(DEP_SYSTEM_HEADER ogg/ogg.h)
 
 Keys:
 
-- `DEP_VERSION`: selected version; the only place a consumer reads it from.
 - `DEP_KIND`: `library` (default), `source`, or `tool`.
 - `DEP_TARGET`: imported target for a single-target library.
 - `DEP_LIBS`: base library names on Unix, without `lib` prefix or extension.
@@ -103,10 +101,11 @@ resolution, usually `add_subdirectory()` or setting variables for existing
 
 ## Recipe Spec
 
-One recipe per buildable version:
+One recipe per buildable dependency:
 
 ```cmake
-# ogg/1.3.5/recipe/spec.cmake
+# recipes/ogg/spec.cmake
+set(DEP_VERSION 1.3.5)
 set(DEP_SOURCE_URL    "https://example.invalid/libogg-1.3.5.tar.gz")
 set(DEP_SOURCE_SHA256 "<sha256>")
 
@@ -120,6 +119,7 @@ set(DEP_LICENSE_FILES COPYING)
 
 Keys:
 
+- `DEP_VERSION`: selected version; the only place it is defined and read from.
 - `DEP_SOURCE_URL` / `DEP_SOURCE_SHA256`: upstream archive and its SHA-256.
 - `DEP_CMAKE_ARGS`: extra arguments for the configure step.
 - `DEP_CMAKE_SOURCE_SUBDIR`: subdirectory holding the upstream CMake project.
@@ -137,7 +137,7 @@ set(DEP_CMAKE_ARGS_WINDOWS -DFOO=ON)
 set(DEP_PATCHES_MACOS patch/fix-macos.patch)
 ```
 
-When upstream has no usable CMake build, add `<version>/recipe/build.cmake`. It
+When upstream has no usable CMake build, add `recipes/<name>/build.cmake`. It
 runs after fetch and patch and can use builder-provided variables: `SRC`
 (patched source), `BUILD`, `INSTALL`, `BD_OS`/`BD_ARCH`, `BD_DEPENDS_PREFIXES`
 (prefixes for `DEP_DEPENDS`), and `_bd_cmake_build(<srcdir>)` (standard
@@ -182,20 +182,20 @@ binary; `SYSTEM` still searches `PATH`.
 
 ## Adding A Dependency
 
-1. Create `<name>/<name>.cmake` and set `DEP_VERSION`.
-2. Add target/library metadata, or set `DEP_KIND source`/`tool`.
-3. Create `<name>/<version>/recipe/spec.cmake`, pinning every source with SHA-256.
-4. Add patches only when needed, under the recipe directory.
-5. Add `DEP_LICENSE_FILES`.
-6. Add the dep to the consumer manifest after anything it depends on.
-7. Configure once in the default mode; with no prebuilt yet, it builds from source.
-8. Run a producer build and commit the updated `prebuilt.lock`.
+1. Create `recipes/<name>/<name>.cmake` with target/library metadata, or set
+   `DEP_KIND source`/`tool`.
+2. Create `recipes/<name>/spec.cmake`, setting `DEP_VERSION` and pinning every
+   source with SHA-256.
+3. Add patches only when needed, under `recipes/<name>/patch/`.
+4. Add `DEP_LICENSE_FILES`.
+5. Add the dep to the consumer manifest after anything it depends on.
+6. Configure once in the default mode; with no prebuilt yet, it builds from source.
+7. Run a producer build and commit the updated `prebuilt.lock`.
 
 ## Bumping A Dependency
 
-1. Add a new `<name>/<new-version>/recipe/`, or update in place if the version
-   directory is intentionally reused.
-2. Update `DEP_VERSION`, the source URL, and the SHA-256.
+1. In `recipes/<name>/spec.cmake`, update `DEP_VERSION`, the source URL, and
+   the SHA-256.
 3. Revisit patches and CMake args; drop what upstream no longer needs.
 4. Build locally in `REBUILD` mode.
 5. Run the producer workflow and commit the new `prebuilt.lock`.
@@ -205,8 +205,8 @@ binary; `SYSTEM` still searches `PATH`.
 
 Prebuilt path (default mode):
 
-1. `require_dep(name)` reads `DEP_VERSION`; for non-system modes it includes the
-   recipe `spec.cmake`.
+1. `require_dep(name)` reads the metadata, then for non-system modes includes the
+   recipe `spec.cmake`, which defines `DEP_VERSION`.
 2. `resolve.cmake` searches `prebuilt.lock` for `name version os arch`. The
    archive name carries the current recipe signature, so a stale lock cannot
    satisfy a changed recipe.

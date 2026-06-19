@@ -17,6 +17,7 @@ if(NOT DEFINED OS OR NOT DEFINED ARCH)
 endif()
 
 get_filename_component(REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}" DIRECTORY)
+set(RECIPES_ROOT "${REPO_ROOT}/recipes")
 include("${CMAKE_CURRENT_LIST_DIR}/build_dependency.cmake")
 
 find_program(SEVENZIP NAMES 7z 7za 7zr REQUIRED)
@@ -27,13 +28,14 @@ file(REMOVE_RECURSE "${STAGE}")
 file(MAKE_DIRECTORY "${STAGE}")
 
 # Collect buildable recipes
-file(GLOB_RECURSE _specs "${REPO_ROOT}/spec.cmake")
+file(GLOB _specs "${RECIPES_ROOT}/*/spec.cmake")
 list(SORT _specs)
 set(ALL "")
 foreach(_spec ${_specs})
     unset(DEP_SOURCE_URL)
     unset(DEP_DEPENDS)
     unset(DEP_PLATFORMS)
+    unset(DEP_VERSION)
     include("${_spec}")
 
     # Skip if no source is defined
@@ -50,11 +52,9 @@ foreach(_spec ${_specs})
         endif()
     endif()
 
-    get_filename_component(_version_dir "${_spec}" DIRECTORY)   # .../recipe
-    get_filename_component(_version_dir "${_version_dir}" DIRECTORY) # .../<version>
-    get_filename_component(_name_dir "${_version_dir}" DIRECTORY) # .../<name>
-    get_filename_component(_version "${_version_dir}" NAME)
+    get_filename_component(_name_dir "${_spec}" DIRECTORY)   # recipes/<name>
     get_filename_component(_name "${_name_dir}" NAME)
+    set(_version "${DEP_VERSION}")   # the recipe defines the version
 
     # Read the recipe
     unset(DEP_KIND)
@@ -90,7 +90,7 @@ endif()
 # Tools are built before libs and added to PATH as they may be needed at build time.
 foreach(_tool ${TOOLS})
     message(STATUS "[platform] tool ${_tool}/${_VER_${_tool}}")
-    build_dep(NAME ${_tool} RECIPE_DIR "${REPO_ROOT}/${_tool}/${_VER_${_tool}}/recipe"
+    build_dep(NAME ${_tool} RECIPE_DIR "${RECIPES_ROOT}/${_tool}"
               OS ${OS} ARCH ${ARCH}
               WORK "${REPO_ROOT}/.build/platform/work/${_tool}"
               INSTALL_DIR "${STAGE}/${_tool}")
@@ -128,7 +128,7 @@ while(_remaining GREATER 0)
         endif()
 
         message(STATUS "[platform] build ${_name}/${_VER_${_name}}")
-        build_dep(NAME ${_name} RECIPE_DIR "${REPO_ROOT}/${_name}/${_VER_${_name}}/recipe"
+        build_dep(NAME ${_name} RECIPE_DIR "${RECIPES_ROOT}/${_name}"
                   OS ${OS} ARCH ${ARCH}
                   WORK "${REPO_ROOT}/.build/platform/work/${_name}" INSTALL_DIR "${STAGE}/${_name}"
                   DEPENDS_PREFIXES "${_dep_prefixes}")
@@ -153,7 +153,7 @@ set(_lock "")
 foreach(_name ${ALL} ${TOOLS})
     # Signature is based on the recipe, not the built output. Any recipe change
     # gets a new archive name and forces consumers to update.
-    _bd_recipe_sig("${REPO_ROOT}/${_name}/${_VER_${_name}}/recipe" "${OS}" "${ARCH}" _signature)
+    _bd_recipe_sig("${RECIPES_ROOT}/${_name}" "${OS}" "${ARCH}" _signature)
     string(SUBSTRING "${_signature}" 0 12 _signature)
     set(_archive "${_name}-${_VER_${_name}}-${OS}-${ARCH}-${_signature}.7z")
 

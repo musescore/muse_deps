@@ -1,0 +1,10 @@
+set(DEP_KIND source)
+
+function(googletest_add_to_build)
+    if(TARGET gtest)
+        return()
+    endif()
+    get_property(_src GLOBAL PROPERTY googletest_SOURCE_DIR)
+    set(INSTALL_GTEST OFF)
+    add_subdirectory("${_src}/googletest" googletest)
+endfunction()
