@@ -246,6 +246,11 @@ function(build_dep)
     if(NOT BD_CONFIG)
         set(BD_CONFIG "RelWithDebInfo")
     endif()
+    # Guard against argument-order mistakes by callers (e.g. an arch leaking into the
+    # config slot): a bad CONFIG otherwise surfaces as a cryptic missing-source error.
+    if(NOT BD_CONFIG MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel)$")
+        message(FATAL_ERROR "[${BD_NAME}] invalid CONFIG '${BD_CONFIG}' (expected a CMake build type)")
+    endif()
 
     # Clear existing DEP_* variables so recipes do not leak into each other
     get_cmake_property(_allvars VARIABLES)
