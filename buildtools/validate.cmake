@@ -47,6 +47,14 @@ foreach(_name ${_all_names})
         _v_err("${_name}: stray ${_name}.cmake (metadata must be meta.cmake)")
     endif()
 
+    # meta.cmake is included before spec.cmake, so DEP_VERSION is not set there yet.
+    # A reference to it (e.g. building a path from the old <version>/recipe/ layout)
+    # silently expands empty -> always a bug. The version belongs in spec.cmake.
+    file(READ "${_meta}" _meta_text)
+    if(_meta_text MATCHES "DEP_VERSION")
+        _v_err("${_name}: meta.cmake references DEP_VERSION (it belongs in spec.cmake)")
+    endif()
+
     # Reset recipe vars so one recipe cannot leak into the next.
     foreach(_var DEP_VERSION DEP_KIND DEP_SOURCES DEP_PATCHES DEP_PATCHES_WINDOWS
                  DEP_PATCHES_MACOS DEP_PATCHES_LINUX DEP_DEPENDS DEP_SOURCE_URL)
