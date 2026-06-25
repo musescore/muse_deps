@@ -1,7 +1,7 @@
 set(DEP_KIND source)
 
 # remember the path to recipe so we can use it in post_resolve
-set_property(GLOBAL PROPERTY _liblouis_recipe "${CMAKE_CURRENT_LIST_DIR}/${DEP_VERSION}/")
+set_property(GLOBAL PROPERTY _liblouis_recipe "${CMAKE_CURRENT_LIST_DIR}")
 
 # this is called after the source is populated
 # creates a target: liblouis and sets global LIBLOUIS_TABLE_NAMES with tables to install
