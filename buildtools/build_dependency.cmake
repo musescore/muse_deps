@@ -124,11 +124,24 @@ endfunction()
 # Configure, build, and install a standard CMake project.
 function(_bd_cmake_build srcdir)
     string(REPLACE "@RECIPE_DIR@" "${BD_RECIPE_DIR}" _dep_cmake_args "${DEP_CMAKE_ARGS}")
-    set(_configure_args -S "${srcdir}" -B "${BUILD}" -G Ninja
+
+    set(_bd_generator "${CMAKE_GENERATOR}")
+    if(NOT _bd_generator)
+        set(_bd_generator Ninja)
+    endif()
+
+    set(_configure_args -S "${srcdir}" -B "${BUILD}" -G "${_bd_generator}"
             -DCMAKE_BUILD_TYPE=${BD_CONFIG}
             -DCMAKE_INSTALL_PREFIX=${INSTALL}
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             ${_dep_cmake_args})
+
+    if(CMAKE_C_COMPILER)
+        list(APPEND _configure_args -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+    endif()
+    if(CMAKE_CXX_COMPILER)
+        list(APPEND _configure_args -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+    endif()    # Prepare initial cache variables
 
     # Prepare initial cache variables
     set(_initial_cache "")
