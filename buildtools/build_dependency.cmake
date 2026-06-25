@@ -245,6 +245,10 @@ function(build_dep)
         set(BD_CONFIG "RelWithDebInfo")
     endif()
 
+    if(NOT BD_CONFIG MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel)$")
+        message(FATAL_ERROR "[${BD_NAME}] invalid CONFIG '${BD_CONFIG}' (expected a CMake build type)")
+    endif()
+
     # Clear existing DEP_* variables so recipes do not leak into each other
     get_cmake_property(_allvars VARIABLES)
     foreach(_v ${_allvars})
