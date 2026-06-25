@@ -1,6 +1,6 @@
 set(DEP_KIND source)
 
-set_property(GLOBAL PROPERTY _crashpad_client_recipe "${CMAKE_CURRENT_LIST_DIR}/${DEP_VERSION}/")
+set_property(GLOBAL PROPERTY _crashpad_client_recipe "${CMAKE_CURRENT_LIST_DIR}")
 
 function(crashpad_client_add_to_build)
     if(TARGET gcrashpad)
