@@ -6,3 +6,5 @@
 
 # prebuilt archives are release assets, never committed
 *.7z
+
+*.swp
