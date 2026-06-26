@@ -31,9 +31,10 @@ function(liblouis_post_resolve mode local_path os arch version)
     target_include_directories(liblouis PUBLIC ${_src} ${_gen})
     set_target_properties(liblouis PROPERTIES UNITY_BUILD OFF)
     if(MSVC)
-        target_compile_options(liblouis PRIVATE /W0)
+        target_compile_options(liblouis PRIVATE /wd4018 /wd4100 /wd4101 /wd4189 /wd4244 /wd4267 /wd4389 /wd4456 /wd4457 /wd4701 /wd4702 /wd4703 /wd4996)
     else()
-        target_compile_options(liblouis PRIVATE -w)
+        # equivalents for C4018 and C4389 might be needed
+        target_compile_options(liblouis PRIVATE -Wno-unused-parameter -Wno-unused-variable -Wno-conversion)
     endif()
 
     # expose tables for the consumer to install
