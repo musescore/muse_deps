@@ -23,11 +23,4 @@ function(crashpad_client_add_to_build)
     set(CRASHPAD_CLIENT_GEN "${_recipe}/gen")
     set(CRASHPAD_CLIENT_ARCH "${_arch}")
     add_subdirectory("${_recipe}/build" "${CMAKE_BINARY_DIR}/_deps/crashpad_client-build")
-
-    if(MSVC)
-        target_compile_options(crashpad_client PRIVATE /wd4100)
-    else()
-        target_compile_options(crashpad_client PRIVATE -Wno-unused-parameter)
-    endif()
-
 endfunction()
