@@ -8,6 +8,9 @@ set(DEP_CMAKE_ARGS
     -DPA_BUILD_STATIC=OFF
 )
 
-set(DEP_PATCHES_WINDOWS patch/0001-windows-loopback-and-mixer-exports.patch)
+set(DEP_PATCHES_WINDOWS
+    patch/0001-windows-loopback-and-mixer-exports.patch
+    patch/0002-asio-lazy-device-enumeration.patch
+)
 
 set(DEP_LICENSE_FILES LICENSE.txt)
