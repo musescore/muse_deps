@@ -3,7 +3,7 @@
 #   - every consumed dep is appended to the EXTDEPS_CONSUMED global property
 #   - per-dep globals (<name>_INSTALL_LIBRARIES, <name>_PREFIX)
 
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.25)
 
 get_filename_component(EXTDEPS_DIR "${CMAKE_CURRENT_LIST_DIR}" DIRECTORY)
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.25)
 
 get_filename_component(_EXTDEPS_ROOT "${CMAKE_CURRENT_LIST_DIR}" DIRECTORY)
 include("${CMAKE_CURRENT_LIST_DIR}/build_dependency.cmake")
@@ -57,6 +57,8 @@ endfunction()
 function(_extdeps_make_target target include_dirs link_libraries)
     if(target AND NOT TARGET ${target})
         add_library(${target} INTERFACE IMPORTED GLOBAL)
+        # non-SYSTEM so dep headers have the priority over system headers
+        set_property(TARGET ${target} PROPERTY SYSTEM FALSE)
         target_include_directories(${target} INTERFACE ${include_dirs})
         target_link_libraries(${target} INTERFACE ${link_libraries})
     endif()
