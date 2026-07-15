@@ -266,7 +266,7 @@ endfunction()
 
 # macOS: make installed dylibs relocatable, and point them at sibling deps'
 # lib directories so transitive runtime dependencies can be found.
-function(_bd_relocatable_macos os install_dir depends_prefixes)
+function(_bd_relocatable_macos os name install_dir depends_prefixes)
     if(NOT os STREQUAL "macos")
         return()
     endif()
@@ -282,7 +282,7 @@ function(_bd_relocatable_macos os install_dir depends_prefixes)
     endif()
 
     get_filename_component(_install_lib "${install_dir}/lib" ABSOLUTE)
-    set(_rpath_entries "")
+    set(_rpath_entries "@loader_path")
     foreach(_prefix ${depends_prefixes})
         if(EXISTS "${_prefix}/lib")
             get_filename_component(_dep_lib "${_prefix}/lib" ABSOLUTE)
@@ -290,9 +290,7 @@ function(_bd_relocatable_macos os install_dir depends_prefixes)
             list(APPEND _rpath_entries "@loader_path/${_rel}")
         endif()
     endforeach()
-    if(_rpath_entries)
-        list(REMOVE_DUPLICATES _rpath_entries)
-    endif()
+    list(REMOVE_DUPLICATES _rpath_entries)
 
     foreach(_dylib ${_dylibs})
         if(IS_SYMLINK "${_dylib}")
@@ -302,19 +300,30 @@ function(_bd_relocatable_macos os install_dir depends_prefixes)
         get_filename_component(_name "${_dylib}" NAME)
         if(NOT _install_name MATCHES "@rpath/")
             execute_process(COMMAND ${INSTALL_NAME_TOOL} -id "@rpath/${_name}" "${_dylib}" ERROR_QUIET)
-            message(STATUS "[${BD_NAME}] install_name -> @rpath/${_name}")
+            message(STATUS "[${name}] install_name -> @rpath/${_name}")
         endif()
 
         foreach(_entry ${_rpath_entries})
-            # -add_rpath fails (non-fatally, ERROR_QUIET'd) if the entry is already present
-            execute_process(COMMAND ${INSTALL_NAME_TOOL} -add_rpath "${_entry}" "${_dylib}" ERROR_QUIET)
+            execute_process(COMMAND ${INSTALL_NAME_TOOL} -add_rpath "${_entry}" "${_dylib}"
+                            RESULT_VARIABLE _result ERROR_VARIABLE _err)
+            # duplicate entries are expected when re-running
+            if(NOT _result EQUAL 0 AND NOT _err MATCHES "duplicate")
+                message(FATAL_ERROR "[${name}] add_rpath ${_entry} failed for ${_dylib}: ${_err}")
+            endif()
         endforeach()
     endforeach()
 endfunction()
 
+# Fix up libraries
+function(_bd_fixup_installed os name install_dir depends_prefixes)
+    _bd_ensure_sonames("${os}" "${name}" "${install_dir}")
+    _bd_relocatable_elf("${os}" "${name}" "${install_dir}" "${depends_prefixes}")
+    _bd_relocatable_macos("${os}" "${name}" "${install_dir}" "${depends_prefixes}")
+endfunction()
+
 # Create a signature of the recipe directory and its contents
 function(_bd_recipe_sig recipe_dir os arch out)
-    set(_BD_ENGINE_REV 3)
+    set(_BD_ENGINE_REV 4)
     set(_sig "${_BD_ENGINE_REV}|${os}|${arch}")
     file(GLOB_RECURSE _files "${recipe_dir}/*")
     list(SORT _files)
@@ -369,9 +378,7 @@ function(build_dep)
         file(READ "${_build_stamp}" _prev_sig)
         if(_prev_sig STREQUAL "${_build_sig}")
             message(STATUS "[${BD_NAME}] up-to-date (recipe unchanged), skipping build")
-            _bd_ensure_sonames("${BD_OS}" "${BD_NAME}" "${BD_INSTALL_DIR}")
-            _bd_relocatable_elf("${BD_OS}" "${BD_NAME}" "${BD_INSTALL_DIR}" "${BD_DEPENDS_PREFIXES}")
-            _bd_relocatable_macos("${BD_OS}" "${BD_INSTALL_DIR}" "${BD_DEPENDS_PREFIXES}")
+            _bd_fixup_installed("${BD_OS}" "${BD_NAME}" "${BD_INSTALL_DIR}" "${BD_DEPENDS_PREFIXES}")
             return()
         endif()
     endif()
@@ -468,9 +475,7 @@ function(build_dep)
     endif()
 
     # Fix-up installed libraries
-    _bd_ensure_sonames("${BD_OS}" "${BD_NAME}" "${INSTALL}")
-    _bd_relocatable_elf("${BD_OS}" "${BD_NAME}" "${INSTALL}" "${BD_DEPENDS_PREFIXES}")
-    _bd_relocatable_macos("${BD_OS}" "${INSTALL}" "${BD_DEPENDS_PREFIXES}")
+    _bd_fixup_installed("${BD_OS}" "${BD_NAME}" "${INSTALL}" "${BD_DEPENDS_PREFIXES}")
 
     # Record the build signature
     file(WRITE "${_build_stamp}" "${_build_sig}")
