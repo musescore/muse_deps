@@ -31,7 +31,7 @@ jobs:
         with:
           arch: ${{ matrix.arch == 'aarch64' && 'arm64' || 'amd64' }}
       - if: matrix.os == 'linux'
-        run: sudo apt-get update && sudo apt-get install -y ninja-build p7zip-full libasound2-dev libssl-dev
+        run: sudo apt-get update && sudo apt-get install -y ninja-build p7zip-full libasound2-dev libssl-dev libdbus-1-dev
       - if: matrix.os == 'macos'
         run: brew install ninja sevenzip
       - if: matrix.os == 'windows'
