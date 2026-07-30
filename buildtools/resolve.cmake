@@ -205,7 +205,7 @@ function(_extdeps_build name local_path os arch config)
     build_dep(NAME ${name} RECIPE_DIR "${_EXTDEPS_ROOT}/recipes/${name}"
               OS ${os} ARCH ${arch} CONFIG "${config}"
               WORK "${local_path}/work" INSTALL_DIR "${local_path}"
-              DEPENDS_PREFIXES "${_dep_prefixes}")
+              DEPENDS_PREFIXES "${_dep_prefixes}" STATIC "${DEP_STATIC}")
 endfunction()
 
 # Fetch a locked prebuilt archive

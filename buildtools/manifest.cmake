@@ -82,8 +82,8 @@ endif()
 function(_extdeps_run name mode)
     set(local_path ${LOCAL_ROOT_PATH}/${name})
 
-    # read the dep metadata and recipe
-    include("${EXTDEPS_DIR}/recipes/${name}/meta.cmake")
+    # read the dep recipe and metadata
+    # fixme: currently meta has inverse dependency on recipe, ie DEP_STATIC
     set(version "")
     if (NOT mode STREQUAL "system")
         include("${EXTDEPS_DIR}/recipes/${name}/spec.cmake")
@@ -92,6 +92,7 @@ function(_extdeps_run name mode)
             message(FATAL_ERROR "[deps] '${name}': recipe spec.cmake is missing DEP_VERSION")
         endif()
     endif()
+    include("${EXTDEPS_DIR}/recipes/${name}/meta.cmake")
 
     # local source type is for local development, built in place
     foreach(_source ${DEP_SOURCES})
@@ -157,14 +158,20 @@ function(require_dep name)
         set(mode "system")
     elseif ("${ARGV1}" STREQUAL "REBUILD")
         set(mode "rebuild")
+    elseif ("${ARGV1}" STREQUAL "STATIC")
+        set(mode "rebuild")
+        set(DEP_STATIC ON)
+        message(STATUS "[deps] ${name}: STATIC requested, will rebuilding")
     elseif (NOT "${ARGV1}" STREQUAL "")
-        message(FATAL_ERROR "[deps] ${name}: require_dep accepts only REBUILD or SYSTEM (got '${ARGV1}')")
+        message(FATAL_ERROR "[deps] ${name}: require_dep accepts only REBUILD, SYSTEM, or STATIC (got '${ARGV1}')")
     endif()
 
     # An environment override can change the mode
-    _extdeps_override("${name}" "${mode}" _override)
-    if (NOT "${_override}" STREQUAL "")
-        set(mode "${_override}")
+    if(NOT DEP_STATIC)
+        _extdeps_override("${name}" "${mode}" _override)
+        if (NOT "${_override}" STREQUAL "")
+            set(mode "${_override}")
+        endif()
     endif()
 
     _extdeps_run("${name}" "${mode}")

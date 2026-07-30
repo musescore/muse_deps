@@ -341,7 +341,7 @@ function(_bd_recipe_sig recipe_dir os arch out)
 endfunction()
 
 function(build_dep)
-    cmake_parse_arguments(BD "" "NAME;RECIPE_DIR;OS;ARCH;WORK;INSTALL_DIR;CACHE;CONFIG" "DEPENDS_PREFIXES" ${ARGN})
+    cmake_parse_arguments(BD "" "NAME;RECIPE_DIR;OS;ARCH;WORK;INSTALL_DIR;CACHE;CONFIG;STATIC" "DEPENDS_PREFIXES" ${ARGN})
 
     if(NOT BD_CONFIG)
         set(BD_CONFIG "RelWithDebInfo")
@@ -359,6 +359,10 @@ function(build_dep)
         endif()
     endforeach()
 
+    if(BD_STATIC)
+        set(DEP_STATIC ON)
+    endif()
+
     # Read the recipe
     include("${BD_RECIPE_DIR}/spec.cmake")
 
@@ -369,10 +373,20 @@ function(build_dep)
             list(APPEND DEP_${_key} ${DEP_${_key}_${_os}})
         endif()
     endforeach()
+    if(BD_STATIC)
+        include("${BD_RECIPE_DIR}/meta.cmake")
+        if(BD_OS STREQUAL "macos" AND CMAKE_OSX_DEPLOYMENT_TARGET)
+            set(DEP_MACOS_DEPLOYMENT_TARGET "${CMAKE_OSX_DEPLOYMENT_TARGET}")
+        endif()
+    endif()
 
     # Detect if there the recipe was alredy built
     _bd_recipe_sig("${BD_RECIPE_DIR}" "${BD_OS}" "${BD_ARCH}" _build_sig)
     set(_build_sig "${_build_sig}|${BD_CONFIG}")
+    if(BD_STATIC)
+        file(SHA256 "${BD_RECIPE_DIR}/meta.cmake" _static_meta_sig)
+        string(APPEND _build_sig "|static|${_static_meta_sig}|${DEP_MACOS_DEPLOYMENT_TARGET}")
+    endif()
     set(_build_stamp "${BD_INSTALL_DIR}/.build_stamp")
     if(EXISTS "${_build_stamp}")
         file(READ "${_build_stamp}" _prev_sig)
