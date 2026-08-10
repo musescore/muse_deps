@@ -23,4 +23,6 @@ set(DEP_SOURCES
 
 set(DEP_PLATFORMS linux-x86_64 linux-aarch64 macos-aarch64 macos-x86_64 macos-universal windows-x86_64 windows-aarch64)
 
+set(DEP_PATCHES_LINUX patch/0002-http-socket-host-header.patch)
+
 set(DEP_LICENSE_FILES LICENSE)

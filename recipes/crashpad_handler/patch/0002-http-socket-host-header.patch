@@ -1,0 +1,36 @@
+diff --git a/util/net/http_transport_socket.cc b/util/net/http_transport_socket.cc
+--- a/util/net/http_transport_socket.cc
++++ b/util/net/http_transport_socket.cc
+@@ -337,6 +337,6 @@ bool WriteRequest(Stream* stream,
+                   const HTTPHeaders& headers,
+                   HTTPBodyStream* body_stream) {
+   std::string request_line = base::StringPrintf(
+-      "%s %s HTTP/1.0\r\n", method.c_str(), resource.c_str());
++      "%s %s HTTP/1.1\r\n", method.c_str(), resource.c_str());
+   if (!stream->LoggingWrite(request_line.data(), request_line.size()))
+     return false;
+@@ -557,6 +557,15 @@ bool HTTPTransportSocket::ExecuteSynchronously(std::string* response_body) {
+                           << "'";
+ #endif
+ 
++  HTTPHeaders request_headers(headers());
++  std::string host_header(hostname);
++  if ((scheme == "http" && port != "80") ||
++      (scheme == "https" && port != "443")) {
++    host_header.append(":").append(port);
++  }
++  request_headers["Host"] = host_header;
++  request_headers["Connection"] = "close";
++
+   base::ScopedFD sock(CreateSocket(hostname, port));
+   if (!sock.is_valid()) {
+     return false;
+@@ -580,7 +589,7 @@ bool HTTPTransportSocket::ExecuteSynchronously(std::string* response_body) {
+ #endif  // CRASHPAD_USE_BORINGSSL
+ 
+   if (!WriteRequest(
+-          stream.get(), method(), resource, headers(), body_stream())) {
++          stream.get(), method(), resource, request_headers, body_stream())) {
+     return false;
+   }
+ 
