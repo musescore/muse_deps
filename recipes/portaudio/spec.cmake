@@ -8,6 +8,10 @@ set(DEP_CMAKE_ARGS
     -DPA_BUILD_STATIC=OFF
 )
 
+if(BD_OS STREQUAL "linux")
+    list(APPEND DEP_CMAKE_ARGS -DPA_USE_JACK=ON)
+endif()
+
 set(DEP_PATCHES_WINDOWS
     patch/0001-windows-loopback-and-mixer-exports.patch
     patch/0002-asio-lazy-device-enumeration.patch
