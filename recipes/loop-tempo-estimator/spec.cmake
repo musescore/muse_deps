@@ -1,5 +1,5 @@
-set(DEP_VERSION 0.0.4)
+set(DEP_VERSION 0.0.5)
 
 set(DEP_SOURCES
-    "loop-tempo-estimator|tarball|https://github.com/saintmatthieu/loop-tempo-estimator/releases/download/v0.0.4/loop-tempo-estimator-v0.0.4.tar.gz|bf1e157b16bdffa48562a084e8447a2ab2f5d9b85dd791849b3603b90eed3db7"
+    "loop-tempo-estimator|tarball|https://github.com/saintmatthieu/loop-tempo-estimator/releases/download/v0.0.5/loop-tempo-estimator-v0.0.5.tar.gz|e70f2356bbea1bcec3a77e26dddd87b1dd0d5f24c8aed6351aa9d6ec42a66be0"
 )
