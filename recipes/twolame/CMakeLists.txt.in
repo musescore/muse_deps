@@ -1,0 +1,88 @@
+cmake_minimum_required(VERSION 3.24)
+project(twolame C)
+
+set(_src libtwolame)
+add_library(twolame @LIBTYPE@
+    ${_src}/ath.c
+    ${_src}/availbits.c
+    ${_src}/bitbuffer.c
+    ${_src}/crc.c
+    ${_src}/dab.c
+    ${_src}/encode.c
+    ${_src}/energy.c
+    ${_src}/fft.c
+    ${_src}/get_set.c
+    ${_src}/mem.c
+    ${_src}/psycho_0.c
+    ${_src}/psycho_1.c
+    ${_src}/psycho_2.c
+    ${_src}/psycho_3.c
+    ${_src}/psycho_4.c
+    ${_src}/psycho_n1.c
+    ${_src}/subband.c
+    ${_src}/twolame.c
+    ${_src}/util.c
+)
+
+include(CheckIncludeFile)
+include(CheckTypeSize)
+include(TestBigEndian)
+include(CheckLibraryExists)
+
+check_include_file(assert.h   HAVE_ASSERT_H)
+check_include_file(unistd.h   HAVE_UNISTD_H)
+check_include_file(inttypes.h HAVE_INTTYPES_H)
+check_include_file(malloc.h   HAVE_MALLOC_H)
+check_include_file(getopt.h   HAVE_GETOPT_H)
+check_include_file(stdlib.h   HAVE_STDLIB_H)
+check_include_file(string.h   HAVE_STRING_H)
+
+check_type_size("short" SIZEOF_SHORT)
+check_type_size("float" SIZEOF_FLOAT)
+# Autodetection is not working on WoA, set the defaults
+if(NOT SIZEOF_SHORT)
+    set(SIZEOF_SHORT 2)
+endif()
+if(NOT SIZEOF_FLOAT)
+    set(SIZEOF_FLOAT 4)
+endif()
+
+test_big_endian(WORDS_BIGENDIAN)
+
+check_library_exists(m  sqrt   "" HAVE_LIBM_SQRT)
+check_library_exists(m  lrintf "" HAVE_LIBM_LRINTF)
+check_library_exists(mx powf   "" HAVE_LIBMX)
+if(HAVE_LIBM_SQRT AND HAVE_LIBM_LRINTF)
+    set(HAVE_LIBM 1)
+endif()
+
+configure_file("@RECIPE_DIR@/config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/private/config.h" @ONLY)
+
+target_include_directories(twolame
+    PUBLIC  ${_src}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/private
+)
+target_compile_options(twolame PRIVATE
+    $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-include;${CMAKE_CURRENT_BINARY_DIR}/private/config.h>
+    $<$<C_COMPILER_ID:MSVC>:/FI${CMAKE_CURRENT_BINARY_DIR}/private/config.h>
+    $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Wno-unused-parameter;-Wno-unused-variable;-Wno-unused-function>
+    $<$<C_COMPILER_ID:MSVC>:/wd4100;/wd4505>
+)
+
+if(HAVE_LIBM)
+    target_link_libraries(twolame PRIVATE m)
+endif()
+if(HAVE_LIBMX)
+    target_link_libraries(twolame PRIVATE mx)
+endif()
+
+set_target_properties(twolame PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    C_STANDARD 99
+    C_STANDARD_REQUIRED ON
+    VERSION 0.0.0
+    SOVERSION 0
+)
+
+install(TARGETS twolame ARCHIVE DESTINATION lib LIBRARY DESTINATION lib RUNTIME DESTINATION bin)
+install(FILES ${_src}/twolame.h DESTINATION include)
