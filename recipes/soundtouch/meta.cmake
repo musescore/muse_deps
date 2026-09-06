@@ -1,1 +1,5 @@
-set(DEP_KIND source)
+set(DEP_TARGET soundtouch)
+set(DEP_LIBS SoundTouch)
+set(DEP_INCLUDE_SUBDIRS soundtouch)
+set(DEP_SYSTEM_HEADER soundtouch/SoundTouch.h)
+set(DEP_STATIC_WINDOWS ON)
