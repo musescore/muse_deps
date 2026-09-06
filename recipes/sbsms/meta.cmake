@@ -1,2 +1,4 @@
-# Source-delivery: au3wrap compiles it in-tree.
-set(DEP_KIND source)
+set(DEP_TARGET libsbsms)
+set(DEP_LIBS sbsms)
+set(DEP_SYSTEM_HEADER sbsms.h)
+set(DEP_STATIC_WINDOWS ON)
