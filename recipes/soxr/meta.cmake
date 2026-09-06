@@ -1,1 +1,4 @@
-set(DEP_KIND source)
+set(DEP_TARGET soxr)
+set(DEP_LIBS soxr)
+set(DEP_SYSTEM_HEADER soxr.h)
+set(DEP_STATIC_WINDOWS ON)

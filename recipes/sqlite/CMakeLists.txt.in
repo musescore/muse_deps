@@ -1,0 +1,47 @@
+cmake_minimum_required(VERSION 3.24)
+project(sqlite3 C)
+
+include(CheckSymbolExists)
+check_symbol_exists(fdatasync    "unistd.h" HAVE_FDATASYNC)
+check_symbol_exists(gmtime_r     "time.h"   HAVE_GMTIME_R)
+check_symbol_exists(localtime_r  "time.h"   HAVE_LOCALTIME_R)
+check_symbol_exists(localtime_s  "time.h"   HAVE_LOCALTIME_S)
+check_symbol_exists(isnan        "math.h"   HAVE_ISNAN)
+
+find_package(Threads)
+
+add_library(sqlite3 @LIBTYPE@ sqlite3.c sqlite3.h)
+
+target_compile_definitions(sqlite3 PRIVATE
+    # Recommended in SQLite docs
+    SQLITE_DQS=0
+    SQLITE_DEFAULT_MEMSTATUS=0
+    SQLITE_DEFAULT_SYNCHRONOUS=1
+    SQLITE_DEFAULT_WAL_SYNCHRONOUS=1
+    SQLITE_LIKE_DOESNT_MATCH_BLOBS
+    SQLITE_MAX_EXPR_DEPTH=0
+    SQLITE_OMIT_DEPRECATED
+    SQLITE_OMIT_SHARED_CACHE
+    SQLITE_USE_ALLOCA
+    SQLITE_OMIT_AUTOINIT
+    $<$<BOOL:${HAVE_FDATASYNC}>:HAVE_FDATASYNC>
+    $<$<BOOL:${HAVE_GMTIME_R}>:HAVE_GMTIME_R>
+    $<$<BOOL:${HAVE_ISNAN}>:HAVE_ISNAN>
+    $<$<BOOL:${HAVE_LOCALTIME_R}>:HAVE_LOCALTIME_R>
+    $<$<BOOL:${HAVE_LOCALTIME_S}>:HAVE_LOCALTIME_S>
+)
+
+target_link_libraries(sqlite3 PRIVATE
+    ${CMAKE_DL_LIBS}
+    $<$<TARGET_EXISTS:Threads::Threads>:Threads::Threads>
+    $<$<NOT:$<PLATFORM_ID:Windows>>:m>
+)
+
+set_target_properties(sqlite3 PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    VERSION 0.8.6
+    SOVERSION 0
+)
+
+install(TARGETS sqlite3 ARCHIVE DESTINATION lib LIBRARY DESTINATION lib RUNTIME DESTINATION bin)
+install(FILES sqlite3.h sqlite3ext.h DESTINATION include)

@@ -1,0 +1,58 @@
+cmake_minimum_required(VERSION 3.24)
+project(SoundTouch C CXX)
+
+set(_src source/SoundTouch)
+add_library(SoundTouch @LIBTYPE@
+    ${_src}/AAFilter.cpp
+    ${_src}/BPMDetect.cpp
+    ${_src}/cpu_detect_x86.cpp
+    ${_src}/FIFOSampleBuffer.cpp
+    ${_src}/FIRFilter.cpp
+    ${_src}/PeakFinder.cpp
+    ${_src}/RateTransposer.cpp
+    ${_src}/SoundTouch.cpp
+    ${_src}/TDStretch.cpp
+    ${_src}/mmx_optimized.cpp
+    ${_src}/sse_optimized.cpp
+)
+
+include(CheckIncludeFile)
+check_include_file(cpuid.h    HAVE_CPUID_H)
+check_include_file(inttypes.h HAVE_INTTYPES_H)
+check_include_file(stdint.h   HAVE_STDINT_H)
+check_include_file(stdlib.h   HAVE_STDLIB_H)
+check_include_file(string.h   HAVE_STRING_H)
+check_include_file(unistd.h   HAVE_UNISTD_H)
+
+configure_file("@RECIPE_DIR@/soundtouch_config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/private/soundtouch_config.h" @ONLY)
+
+target_compile_definitions(SoundTouch PRIVATE
+    SOUNDTOUCH_FLOAT_SAMPLES=1
+    # BPMDetect.cpp uses INPUT_BLOCK_SIZE / DECIMATED_BLOCK_SIZE, the file defines *_SAMPLES
+    INPUT_BLOCK_SIZE=2048
+    DECIMATED_BLOCK_SIZE=256
+)
+target_include_directories(SoundTouch
+    PUBLIC  include ${CMAKE_CURRENT_BINARY_DIR}/private
+)
+target_compile_options(SoundTouch PRIVATE
+    $<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:-Wno-unused-parameter;-Wno-unused-variable;-Wno-unused-function>
+    $<$<CXX_COMPILER_ID:MSVC>:/wd4100;/wd4505>
+)
+
+set_target_properties(SoundTouch PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    VERSION 1.0.0
+    SOVERSION 1
+)
+
+install(TARGETS SoundTouch ARCHIVE DESTINATION lib LIBRARY DESTINATION lib RUNTIME DESTINATION bin)
+install(FILES
+    include/BPMDetect.h
+    include/FIFOSampleBuffer.h
+    include/FIFOSamplePipe.h
+    include/STTypes.h
+    include/SoundTouch.h
+    ${CMAKE_CURRENT_BINARY_DIR}/private/soundtouch_config.h
+    DESTINATION include/soundtouch
+)

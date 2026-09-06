@@ -1,0 +1,74 @@
+cmake_minimum_required(VERSION 3.24)
+project(sbsms C CXX)
+
+add_library(sbsms @LIBTYPE@
+    src/buffer.cpp
+    src/dBTable.cpp
+    src/fft.cpp
+    src/grain.cpp
+    src/resample.cpp
+    src/sbsms.cpp
+    src/slide.cpp
+    src/sms.cpp
+    src/subband.cpp
+    src/track.cpp
+    src/trackpoint.cpp
+)
+
+include(CheckIncludeFile)
+check_include_file(dlfcn.h     HAVE_DLFCN_H)
+check_include_file(inttypes.h  HAVE_INTTYPES_H)
+check_include_file(memory.h    HAVE_MEMORY_H)
+check_include_file(stdint.h    HAVE_STDINT_H)
+check_include_file(stdlib.h    HAVE_STDLIB_H)
+check_include_file(strings.h   HAVE_STRINGS_H)
+check_include_file(string.h    HAVE_STRING_H)
+check_include_file(sys/stat.h  HAVE_SYS_STAT_H)
+check_include_file(sys/types.h HAVE_SYS_TYPES_H)
+check_include_file(unistd.h    HAVE_UNISTD_H)
+
+include(CheckCXXSourceCompiles)
+if(NOT WIN32)
+    set(CMAKE_REQUIRED_LIBRARIES m)
+endif()
+check_cxx_source_compiles("
+    #define _USE_MATH_DEFINES
+    #include <cmath>
+    int main() { long int x = lrint(3.14); return 0; }
+" HAVE_LRINT)
+check_cxx_source_compiles("
+    #define _USE_MATH_DEFINES
+    #include <cmath>
+    int main() { long int x = lrintf(3.14f); return 0; }
+" HAVE_LRINTF)
+set(CMAKE_REQUIRED_LIBRARIES)
+# MSVC always has lrint/lrintf in <cmath>, autodetection is not working on WoA
+if(MSVC)
+    set(HAVE_LRINT 1)
+    set(HAVE_LRINTF 1)
+endif()
+
+configure_file("@RECIPE_DIR@/config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/private/config.h" @ONLY)
+
+target_include_directories(sbsms
+    PUBLIC  include
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/private
+)
+target_compile_options(sbsms PRIVATE
+    $<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:-w>
+    $<$<CXX_COMPILER_ID:MSVC>:/w>
+)
+if(NOT WIN32)
+    target_link_libraries(sbsms PRIVATE m)
+endif()
+
+set_target_properties(sbsms PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    CXX_STANDARD 14
+    CXX_STANDARD_REQUIRED ON
+    VERSION 10.0.0
+    SOVERSION 10
+)
+
+install(TARGETS sbsms ARCHIVE DESTINATION lib LIBRARY DESTINATION lib RUNTIME DESTINATION bin)
+install(FILES include/sbsms.h DESTINATION include)
