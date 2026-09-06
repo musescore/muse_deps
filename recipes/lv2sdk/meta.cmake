@@ -1,1 +1,12 @@
 set(DEP_KIND source)
+set(DEP_SOURCE_SYSTEM ON)
+
+function(lv2sdk_post_resolve mode local_path os arch version)
+    if(TARGET lv2sdk OR NOT mode STREQUAL "system")
+        return()
+    endif()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(lv2sdk_system REQUIRED IMPORTED_TARGET lilv-0 suil-0 zix-0 lv2)
+    add_library(lv2sdk INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(lv2sdk INTERFACE PkgConfig::lv2sdk_system)
+endfunction()
