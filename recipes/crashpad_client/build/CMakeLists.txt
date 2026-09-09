@@ -15,6 +15,7 @@ set(_src
     ${_mc}/base/strings/utf_string_conversions.cc
     ${_mc}/base/strings/utf_string_conversion_utils.cc
     ${_cp}/client/crash_report_database.cc
+    ${_cp}/client/crashpad_info.cc
     ${_cp}/client/settings.cc
     ${_cp}/util/misc/uuid.cc
     ${_cp}/util/misc/metrics.cc
