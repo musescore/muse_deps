@@ -37,6 +37,7 @@ if(UNIX AND NOT APPLE)
         ${_cp}/client/client_argv_handling.cc
         ${_cp}/client/crashpad_client_linux.cc
         ${_cp}/client/crash_report_database_generic.cc
+        ${_cp}/client/crashpad_info_note.S
 
         ${_cp}/util/file/file_io.cc
         ${_cp}/util/file/file_io_posix.cc
@@ -65,6 +66,10 @@ if(UNIX AND NOT APPLE)
 
         ${_cp}/compat/linux/sys/mman_memfd_create.cc
     )
+    enable_language(ASM)
+    # Without this, the entire executable's stack would become Read-Write-Execute instead of just Read-Write.
+    # To test it, run `readelf -lW path/to/exec | grep GNU_STACK`, comment this line out, rebuild, rerun `readelf` and observe the difference.
+    set_source_files_properties(${_cp}/client/crashpad_info_note.S PROPERTIES COMPILE_OPTIONS "-Wa,--noexecstack")
     set(_def -DCRASHPAD_LSS_SOURCE_EMBEDDED)
     list(APPEND _priv_inc ${_cp}/compat/linux)
     set(_link pthread dl)
