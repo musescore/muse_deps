@@ -35,6 +35,8 @@ function(_wxwidgets_set_from_wxconfig wxconfig prefix os)
     endif()
     separate_arguments(wx_cxx_list NATIVE_COMMAND "${wx_cxx}")
     separate_arguments(wx_libs_list NATIVE_COMMAND "${wx_libs}")
+    # Keep framework flags and names together as a single CMake link item.
+    string(REGEX REPLACE "-framework;([^;]+)" "-framework \\1" wx_libs_list "${wx_libs_list}")
 
     set(incs "")
     set(opts "")
