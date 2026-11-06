@@ -397,7 +397,8 @@ function(build_dep)
         endif()
     endif()
 
-    find_program(GIT NAMES git REQUIRED)
+    find_program(GIT NAMES git)
+    find_program(PATCH NAMES patch)
 
     if(NOT BD_CACHE)
         _bd_resolve_cache(BD_CACHE)
@@ -454,8 +455,15 @@ function(build_dep)
     # Apply patches
     foreach(_patch ${DEP_PATCHES})
         message(STATUS "[${BD_NAME}] patch ${_patch}")
-        _bd_run(${CMAKE_COMMAND} -E env GIT_DIR=${BD_WORK}/.no-such-repo
-                ${GIT} apply --whitespace=nowarn "${BD_RECIPE_DIR}/${_patch}" WORKING_DIRECTORY "${SRC}")
+        if(GIT)
+            _bd_run(${CMAKE_COMMAND} -E env GIT_DIR=${BD_WORK}/.no-such-repo
+                    ${GIT} apply --whitespace=nowarn "${BD_RECIPE_DIR}/${_patch}" WORKING_DIRECTORY "${SRC}")
+        elseif(PATCH)
+            _bd_run("${PATCH}" -f -p1 -i "${BD_RECIPE_DIR}/${_patch}"
+                    WORKING_DIRECTORY "${SRC}")
+        else()
+            message(FATAL_ERROR "[${BD_NAME}] neither git nor patch available to apply ${_patch}")
+        endif()
         file(SHA256 "${BD_RECIPE_DIR}/${_patch}" _patch_hash)
         string(SUBSTRING "${_patch_hash}" 0 8 _patch_hash)
         message(STATUS "[${BD_NAME}] patch ${_patch} applied (${_patch_hash})")
