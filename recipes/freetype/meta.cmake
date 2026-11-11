@@ -11,3 +11,6 @@ if(DEP_STATIC)
     )
     list(REMOVE_ITEM DEP_DEPENDS libpng)
 endif()
+
+# Supported on wasm (built by build_platform.cmake for OS=wasm)
+set(DEP_WASM ON)

@@ -9,6 +9,8 @@ on:
 # Until then it will be able to fetch from the main repo releases
 env:
   EXTDEPS_PREBUILT_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download
+  # The wasm libs must be built with the Emscripten version of the apps (the one required by their Qt version)
+  EMSDK_VERSION: 4.0.7
 
 jobs:
   build:
@@ -23,6 +25,7 @@ jobs:
           - { os: windows, arch: aarch64,   runner: windows-11-arm }
           - { os: linux,   arch: x86_64,    runner: ubuntu-22.04 }
           - { os: linux,   arch: aarch64,   runner: ubuntu-22.04-arm }
+          - { os: wasm,    arch: wasm32,    runner: ubuntu-22.04 }
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
@@ -32,13 +35,23 @@ jobs:
           arch: ${{ matrix.arch == 'aarch64' && 'arm64' || 'amd64' }}
       - if: matrix.os == 'linux'
         run: sudo apt-get update && sudo apt-get install -y ninja-build p7zip-full libasound2-dev libjack-jackd2-dev libssl-dev libdbus-1-dev
+      - if: matrix.os == 'wasm'
+        run: |
+          sudo apt-get update && sudo apt-get install -y ninja-build p7zip-full
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$RUNNER_TEMP/emsdk"
+          "$RUNNER_TEMP/emsdk/emsdk" install "$EMSDK_VERSION"
+          "$RUNNER_TEMP/emsdk/emsdk" activate "$EMSDK_VERSION"
       - if: matrix.os == 'macos'
         run: brew install ninja sevenzip
       - if: matrix.os == 'windows'
         run: choco install ninja 7zip -y
       - name: Build platform deps
         shell: bash
-        run: cmake -DOS=${{ matrix.os }} -DARCH=${{ matrix.arch }} -P buildtools/build_platform.cmake
+        run: |
+          if [ "${{ matrix.os }}" == "wasm" ]; then
+            source "$RUNNER_TEMP/emsdk/emsdk_env.sh"
+          fi
+          cmake -DOS=${{ matrix.os }} -DARCH=${{ matrix.arch }} -P buildtools/build_platform.cmake
       - uses: actions/upload-artifact@v7
         with:
           name: out-${{ matrix.os }}-${{ matrix.arch }}
