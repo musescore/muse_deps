@@ -15,3 +15,6 @@ function(zlib_post_resolve mode local_path os arch version)
         set(ZLIB_LIBRARY     "${_lib}" CACHE FILEPATH "from extdeps zlib" FORCE)
     endif()
 endfunction()
+
+# Supported on wasm (built by build_platform.cmake for OS=wasm)
+set(DEP_WASM ON)

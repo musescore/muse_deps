@@ -10,3 +10,6 @@ if(DEP_STATIC)
     )
     list(APPEND DEP_LINK_DEPS freetype::freetype)
 endif()
+
+# Supported on wasm (built by build_platform.cmake for OS=wasm)
+set(DEP_WASM ON)

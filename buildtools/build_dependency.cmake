@@ -121,6 +121,25 @@ function(_bd_run_dir wd)
     endif()
 endfunction()
 
+# Find the Emscripten toolchain file: from the emcc compiler location or from $EMSDK
+function(_bd_emscripten_toolchain out)
+    set(_candidates "")
+    if(CMAKE_C_COMPILER)
+        get_filename_component(_emcc_dir "${CMAKE_C_COMPILER}" DIRECTORY)
+        list(APPEND _candidates "${_emcc_dir}/cmake/Modules/Platform/Emscripten.cmake")
+    endif()
+    if(DEFINED ENV{EMSDK})
+        list(APPEND _candidates "$ENV{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake")
+    endif()
+    foreach(_candidate ${_candidates})
+        if(EXISTS "${_candidate}")
+            set(${out} "${_candidate}" PARENT_SCOPE)
+            return()
+        endif()
+    endforeach()
+    message(FATAL_ERROR "Emscripten toolchain file not found (tried: ${_candidates})")
+endfunction()
+
 # Configure, build, and install a standard CMake project.
 function(_bd_cmake_build srcdir)
     string(REPLACE "@RECIPE_DIR@" "${BD_RECIPE_DIR}" _dep_cmake_args "${DEP_CMAKE_ARGS}")
@@ -136,17 +155,31 @@ function(_bd_cmake_build srcdir)
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             ${_dep_cmake_args})
 
-    if(CMAKE_C_COMPILER)
-        list(APPEND _configure_args -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+    if(BD_OS STREQUAL "wasm")
+        # Cross-compile with the plain Emscripten toolchain (the app may use a wrapper, e.g. Qt's one)
+        _bd_emscripten_toolchain(_emscripten_toolchain)
+        list(APPEND _configure_args
+            -DCMAKE_TOOLCHAIN_FILE=${_emscripten_toolchain}
+            -DBUILD_SHARED_LIBS=OFF)
+    else()
+        if(CMAKE_C_COMPILER)
+            list(APPEND _configure_args -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+        endif()
+        if(CMAKE_CXX_COMPILER)
+            list(APPEND _configure_args -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+        endif()
     endif()
-    if(CMAKE_CXX_COMPILER)
-        list(APPEND _configure_args -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
-    endif()    # Prepare initial cache variables
 
     # Prepare initial cache variables
     set(_initial_cache "")
     if(BD_DEPENDS_PREFIXES)
         string(APPEND _initial_cache "set(CMAKE_PREFIX_PATH \"${BD_DEPENDS_PREFIXES}\" CACHE STRING \"\" FORCE)\n")
+    endif()
+
+    # The Emscripten toolchain searches only inside the find root paths (CMAKE_FIND_ROOT_PATH_MODE_* ONLY),
+    # so the dependency prefixes must be find roots too
+    if(BD_OS STREQUAL "wasm" AND BD_DEPENDS_PREFIXES)
+        string(APPEND _initial_cache "set(CMAKE_FIND_ROOT_PATH \"${BD_DEPENDS_PREFIXES}\" CACHE STRING \"\" FORCE)\n")
     endif()
 
     if(BD_OS STREQUAL "macos")
@@ -210,7 +243,7 @@ endfunction()
 
 # Patch RPATH so a dep point to its sibling libraries
 function(_bd_relocatable_elf os name install_dir depends_prefixes)
-    if(os STREQUAL "windows" OR os STREQUAL "macos")
+    if(os STREQUAL "windows" OR os STREQUAL "macos" OR os STREQUAL "wasm")
         return()
     endif()
 
@@ -333,6 +366,11 @@ function(_bd_recipe_sig recipe_dir os arch out)
         if(_file STREQUAL "${recipe_dir}/meta.cmake")
             continue()
         endif()
+        # The wasm overlay (wasm.cmake, patch/wasm/) is used only for wasm builds,
+        # so it doesn't change the signatures of the other platforms
+        if(NOT os STREQUAL "wasm" AND (_file STREQUAL "${recipe_dir}/wasm.cmake" OR _file MATCHES "^${recipe_dir}/patch/wasm/"))
+            continue()
+        endif()
         file(SHA256 "${_file}" _hash)
         string(APPEND _sig "|${_hash}")
     endforeach()
@@ -365,6 +403,11 @@ function(build_dep)
 
     # Read the recipe
     include("${BD_RECIPE_DIR}/spec.cmake")
+
+    # The wasm overlay of the recipe: DEP_CMAKE_ARGS_WASM, DEP_PATCHES_WASM (patch/wasm/)
+    if(BD_OS STREQUAL "wasm" AND EXISTS "${BD_RECIPE_DIR}/wasm.cmake")
+        include("${BD_RECIPE_DIR}/wasm.cmake")
+    endif()
 
     # Apply platform-specific overrides
     string(TOUPPER "${BD_OS}" _os)

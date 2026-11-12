@@ -1,7 +1,7 @@
 # build_platform.cmake - build every buildable recipe for a single platform.
 #
 # Usage (CI or local):
-#   cmake -DOS=<macos|linux|windows> -DARCH=<x86_64|aarch64|universal> \
+#   cmake -DOS=<macos|linux|windows|wasm> -DARCH=<x86_64|aarch64|universal|wasm32> \
 #         -P buildtools/build_platform.cmake
 #
 # Output goes to .build/platform/out/:
@@ -13,7 +13,15 @@
 cmake_minimum_required(VERSION 3.24)
 
 if(NOT DEFINED OS OR NOT DEFINED ARCH)
-    message(FATAL_ERROR "Required: -DOS=<macos|linux|windows> -DARCH=<x86_64|aarch64|universal>")
+    message(FATAL_ERROR "Required: -DOS=<macos|linux|windows|wasm> -DARCH=<x86_64|aarch64|universal|wasm32>")
+endif()
+
+# WebAssembly has no shared libraries: the libs are built static,
+# and only the recipes that support wasm (DEP_WASM in meta.cmake) are built
+if(OS STREQUAL "wasm")
+    set(_IS_WASM TRUE)
+else()
+    set(_IS_WASM FALSE)
 endif()
 
 get_filename_component(REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}" DIRECTORY)
@@ -59,8 +67,16 @@ foreach(_spec ${_specs})
 
     # Read the recipe
     unset(DEP_KIND)
+    unset(DEP_WASM)
+    if(_IS_WASM)
+        set(DEP_STATIC ON) # the meta may change the deps of the static build
+    endif()
     if(EXISTS "${_name_dir}/meta.cmake")
         include("${_name_dir}/meta.cmake")
+    endif()
+
+    if(_IS_WASM AND NOT DEP_WASM)
+        continue()
     endif()
 
     # Skip source deps, they are not built
@@ -75,6 +91,9 @@ foreach(_spec ${_specs})
     endforeach()
 
     if(DEP_KIND STREQUAL "tool")
+        if(_IS_WASM)
+            continue() # the tools run on the host, they are not built for wasm
+        endif()
         list(APPEND TOOLS "${_name}")
     else()
         list(APPEND ALL "${_name}")
@@ -132,7 +151,7 @@ while(_remaining GREATER 0)
         build_dep(NAME ${_name} RECIPE_DIR "${RECIPES_ROOT}/${_name}"
                   OS ${OS} ARCH ${ARCH}
                   WORK "${REPO_ROOT}/.build/platform/work/${_name}" INSTALL_DIR "${STAGE}/${_name}"
-                  DEPENDS_PREFIXES "${_dep_prefixes}")
+                  DEPENDS_PREFIXES "${_dep_prefixes}" STATIC "${_IS_WASM}")
         list(APPEND DONE "${_name}")
         set(_progress TRUE)
     endforeach()
