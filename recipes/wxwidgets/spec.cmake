@@ -29,7 +29,9 @@ set(DEP_CMAKE_ARGS
 # build). So build GUI on macOS (we still consume only libwx_baseu). Linux and
 # Windows build base-only (no cocoa, and we don't want a GTK dependency).
 set(DEP_CMAKE_ARGS_MACOS   -DwxUSE_GUI=ON)
-set(DEP_CMAKE_ARGS_LINUX   -DwxUSE_GUI=OFF)
+# The bundled zlib includes <unistd.h> (lseek) only with HAVE_UNISTD_H, as its ./configure sets it,
+# otherwise GCC 14 fails on the implicit function declaration
+set(DEP_CMAKE_ARGS_LINUX   -DwxUSE_GUI=OFF -DCMAKE_C_FLAGS=-DHAVE_UNISTD_H)
 set(DEP_CMAKE_ARGS_WINDOWS -DwxUSE_GUI=OFF)
 
 # macOS-only: wx's bundled zlib/png misdetect modern macOS as classic Mac OS
