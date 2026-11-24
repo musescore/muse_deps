@@ -4,3 +4,6 @@ set(DEP_LIBS mp3lame)
 # static on Windows
 set(DEP_STATIC_WINDOWS ON)
 set(DEP_SYSTEM_HEADER lame/lame.h)
+
+# Supported on wasm (built by build_platform.cmake for OS=wasm), static there
+set(DEP_WASM ON)
